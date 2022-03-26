@@ -2,7 +2,10 @@
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
-        <RootNamespace>ToyParser</RootNamespace>
     </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AngleSharp" Version="1.0.0-alpha-844" />
+    </ItemGroup>
 
 </Project>
