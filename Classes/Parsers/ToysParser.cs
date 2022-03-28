@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
 using Classes.Parsers.Abstraction;
@@ -38,16 +39,18 @@ namespace Classes.Parsers
 
             foreach (var page in pageLinks)
             {
-                await ParseToysAsync(page);
+                Thread _thread = new Thread(ParseToysAsync);
+                _thread.Start(page);
             }
+            Thread.Sleep(60000);
 
             return _toys;
         }
 
-        private async Task ParseToysAsync(string url)
+        private async void ParseToysAsync(object? url)
         {
             var toys = new List<ToyInfo>();
-            var document = await BrowsingContext.New(_configuration).OpenAsync(url);
+            var document = await BrowsingContext.New(_configuration).OpenAsync(url.ToString());
             var products = document.QuerySelectorAll("div.product-card > div.row > div.col-12 > a.product-name")
                 .Select(x => _domain + x.GetAttribute("href")).ToArray();
 
@@ -56,7 +59,10 @@ namespace Classes.Parsers
                 toys.Add(await ParseToyAsync(product));
             }
 
-            _toys.AddRange(toys);
+            lock (_toys)
+            {
+                _toys.AddRange(toys);
+            }
         }
 
         private async Task<ToyInfo> ParseToyAsync(string url)
