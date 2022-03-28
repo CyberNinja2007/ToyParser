@@ -1,6 +1,10 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Classes;
+using Classes.Parsers;
+using Classes.Parsers.Abstraction;
+using Classes.Toys.Extensions;
+using Classes.Writers;
+using Classes.Writers.Abstraction;
 
 namespace ConsoleApplication
 {
@@ -8,9 +12,10 @@ namespace ConsoleApplication
     {
         static async Task Main(string[] args)
         {
-            ToysParser toyParser = new ToysParser();
+            IToysParser toyParser = new ToysParser();
+            IWriter writerCsv = new WriterCsv();
             var toys = await toyParser.ParseAsync("https://www.toy.ru/catalog/boy_transport/");
-            WriterCsv.Write(toys.Select(x => x.ToCsv()));
+            writerCsv.Write(toys.Select(x => x.ToCsv()));
         }
     }
 }
