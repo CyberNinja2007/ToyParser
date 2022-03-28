@@ -1,4 +1,4 @@
-﻿namespace Classes
+﻿namespace Classes.Toys
 {
     public struct ToyInfo
     {

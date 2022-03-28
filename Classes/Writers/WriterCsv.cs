@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Classes.Writers.Abstraction;
 
-namespace Classes
+namespace Classes.Writers
 {
-    public static class WriterCsv
+    public class WriterCsv : IWriter
     {
-        public static void  Write(IEnumerable<String> data)
+        public void Write(IEnumerable<String> data)
         {
             string filePath = @"Result.csv";
             File.WriteAllLines(filePath, data);

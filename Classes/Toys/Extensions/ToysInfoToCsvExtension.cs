@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Classes
+namespace Classes.Toys.Extensions
 {
     public static class ToysInfoToCsvExtension
     {
