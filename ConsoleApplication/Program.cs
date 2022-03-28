@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Classes.Parsers;
 using Classes.Parsers.Abstraction;
@@ -16,6 +17,7 @@ namespace ConsoleApplication
             IWriter writerCsv = new WriterCsv();
             var toys = await toyParser.ParseAsync("https://www.toy.ru/catalog/boy_transport/");
             writerCsv.Write(toys.Select(x => x.ToCsv()));
+            Console.WriteLine("Операция завершилась успешно!\nПолученный файл вы можете найти в папке с программой - Results.csv");
         }
     }
 }
