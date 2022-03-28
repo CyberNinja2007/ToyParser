@@ -9,15 +9,16 @@ namespace Classes
     public class ToysParser
     {
         private string _domain;
-        private IConfiguration _configuration;
-        private readonly IBrowsingContext _context;
+        private readonly IConfiguration _configuration;
+        private readonly List<ToyInfo> _toys;
 
         public ToysParser()
         {
-            _configuration = new Configuration().WithDefaultLoader();
+            _configuration = Configuration.Default.WithDefaultLoader();
+            _toys = new List<ToyInfo>();
         }
 
-        public async Task<List<ToyInfo>> Parse(string url)
+        public async Task<List<ToyInfo>> ParseAsync(string url)
         {
             var splittedUrl = url.Split("/").Take(3);
             _domain = string.Join("/",splittedUrl);
@@ -26,50 +27,56 @@ namespace Classes
             var pages = document.QuerySelectorAll("a.page-link").ToArray();
             var pageCount = Convert.ToInt32(pages[^2].TextContent);
             var pageLink = _domain + pages[^1].GetAttribute("href");
-            string[] pageLinks = new string[pageCount];
+            var pageLinks = new string[pageCount];
             
             for (int i = 1; i <= pageCount; i++)
             {
                 pageLinks[i-1] = pageLink.Remove(pageLink.Length - 1,1) + i;
             }
-            
-            List<ToyInfo> toys = new List<ToyInfo>();
-            
+
             foreach (var page in pageLinks)
-            { 
-                toys.AddRange(await ParseToys(page));
+            {
+                await ParseToysAsync(page);
             }
 
-            return toys;
+            return _toys;
         }
 
-        private async Task<List<ToyInfo>> ParseToys(string url)
+        private async Task ParseToysAsync(string url)
         {
-            List<ToyInfo> toys = new List<ToyInfo>();
-            
+            var toys = new List<ToyInfo>();
             var document = await BrowsingContext.New(_configuration).OpenAsync(url);
             var products = document.QuerySelectorAll("div.product-card > div.row > div.col-12 > a.product-name")
                 .Select(x => _domain + x.GetAttribute("href")).ToArray();
 
             foreach (var product in products)
             {
-                toys.Add(await ParseToy(product));
+                toys.Add( await ParseToyAsync(product));
             }
-            
-            return toys;
+
+            lock (_toys)
+            {
+                _toys.AddRange(toys);
+            }
         }
 
-        private async Task<ToyInfo> ParseToy(string url)
+        private async Task<ToyInfo> ParseToyAsync(string url)
         {
             var configuration = new Configuration().WithDefaultLoader();
             var document = await BrowsingContext.New(configuration).OpenAsync(url);
-
-            ToyInfo toy = new ToyInfo();
-
-            toy.Region = document.QuerySelector("div.select-city-link > a").TextContent.Trim();
-            toy.Breadcrumbs = document.QuerySelectorAll("breadcrumb-item")
-                .Select(x => _domain + x.GetAttribute("href")).ToArray();
-            toy.Name = document.QuerySelector("h1.detail-name").TextContent;
+            
+            ToyInfo toy = new ToyInfo
+            {
+                Region = document.QuerySelector("div.select-city-link > a").TextContent.Trim(),
+                Name = document.QuerySelector("h1.detail-name").TextContent,
+                PriceNew = document.QuerySelector("span.price").TextContent,
+                Availability = document.QuerySelector("span.ok").TextContent,
+                Breadcrumbs = document.QuerySelectorAll("a.breadcrumb-item")
+                    .Select(x => _domain + x.GetAttribute("href")).ToArray(),
+                Pictures = document.QuerySelectorAll("img.img-fluid")
+                .Select(x => x.GetAttribute("src")).Skip(3).ToArray(),
+                Url = url
+            };
 
             try
             {
@@ -79,12 +86,6 @@ namespace Classes
             {
                 toy.PriceOld = document.QuerySelector("span.price").TextContent;
             }
-
-            toy.PriceNew = document.QuerySelector("span.price").TextContent;
-            toy.Availability = document.QuerySelector("span.ok").TextContent;
-            toy.Pictures = document.QuerySelectorAll("div.slick-slide > img.img-fluid")
-                .Select(x => x.GetAttribute("href")).ToArray();
-            toy.Url = url;
             
             return toy;
         }
